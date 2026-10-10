@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Čundr pro rodiče – generátor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --page-bg: #ffffff;
+      --field-bg: #ededed;
+      --label: #424242;
+      --poster-bg: #d9d9d9;
+      --ink: #000000;
+      --accent: #2d95ff;
+      --divider: #cfcfcf;
+      --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { height: 100%; }
+
+    body {
+      background: var(--page-bg);
+      font-family: var(--font);
+      font-size: 16px;       /* 1em = 16px; všechny ostatní velikosti písma jsou v em */
+      color: var(--ink);
+    }
+
+    /* Desktop frame: 1440 x 1024 in the design, split in two halves by the divider */
+    .page {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 1024px;
+      min-width: 1440px;
+    }
+
+    /* Divider line (x = 720, y = 39 → 985 in the design) */
+    .divider {
+      position: absolute;
+      left: 50%;
+      top: 39px;
+      height: 946px;
+      width: 1px;
+      background: var(--divider);
+    }
+
+    /* ---------- Left: form ---------- */
+    .form-side { position: relative; }
+
+    .form {
+      position: absolute;
+      top: 162px;
+      left: 30px;
+      display: grid;
+      grid-template-columns: 100px 503px;
+      column-gap: 12px;
+      row-gap: 20px;
+      align-items: center;
+    }
+
+    .form label {
+      justify-self: end;
+      font-size: .75em;      /* 12px */
+      line-height: normal;
+      color: var(--label);
+      white-space: nowrap;
+    }
+
+    .form input {
+      width: 503px;
+      height: 35px;
+      padding: 0 12px;
+      border: 0;
+      border-radius: 5px;
+      background: var(--field-bg);
+      font: 400 .875em/normal var(--font);   /* 14px */
+      color: var(--ink);
+    }
+
+    .form input:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 0;
+    }
+
+    /* ---------- Right: poster + download ---------- */
+    .poster-side { position: relative; }
+
+    .poster {
+      position: absolute;
+      left: 100px;
+      top: 50%;
+      transform: translateY(calc(-50% + 0.5px));
+      width: 536px;
+      height: 701px;
+      background: var(--poster-bg);
+    }
+
+    .poster h1 {
+      position: absolute;
+      left: 4.1%;
+      top: 9.84%;
+      width: 424px;
+      height: 192px;
+      font-weight: 100;
+      font-size: 6em;        /* 96px = maximum; JS ji zmenší, když se text nevejde */
+      line-height: 1;
+      letter-spacing: -.02em; /* -1.92px při 96px, škáluje s velikostí písma */
+      color: var(--ink);
+      white-space: pre-line;
+      overflow-wrap: normal;
+    }
+
+    .poster-info {
+      position: absolute;
+      left: 4.85%;
+      right: 4.85%;
+      bottom: 3.71%;
+      /* ukotveno ke spodnímu okraji plakátu; výška se řídí obsahem, takže tabulka
+         roste směrem nahoru a prázdné místo zůstává mezi nadpisem a tabulkou */
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: repeat(5, auto);
+      align-content: end;
+      column-gap: 31px;
+      row-gap: 14px;
+    }
+
+    .poster-info p {
+      display: flex;
+      align-items: center;
+      font-size: 1em;        /* 16px */
+      line-height: normal;
+      font-weight: 400;
+      color: var(--ink);
+      white-space: pre-line;
+      overflow-wrap: anywhere;
+    }
+
+    .poster-info .sraz     { grid-column: 1;      grid-row: 1; }
+    .poster-info .navrat   { grid-column: 2;      grid-row: 1; }
+    .poster-info .prihl    { grid-column: 1;      grid-row: 2; }
+    .poster-info .kapacita { grid-column: 2;      grid-row: 2; }
+    .poster-info .cena     { grid-column: 1;      grid-row: 3; }
+    .poster-info .ssebou   { grid-column: 1 / -1; grid-row: 4; }
+    .poster-info .vedouci  { grid-column: 1;      grid-row: 5; }
+    .poster-info .tel      { grid-column: 2;      grid-row: 5; }
+
+    .download {
+      position: absolute;
+      left: 540px;           /* 1260 - 720 */
+      top: 894px;
+      width: 83px;
+      height: 41px;
+      border: 0;
+      border-radius: 30px;
+      background: var(--accent);
+      color: #fff;
+      font: 400 .75em/normal var(--font);   /* 12px */
+      cursor: pointer;
+    }
+
+    .download:hover { filter: brightness(1.06); }
+    .download:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="divider" aria-hidden="true"></div>
+
+    <section class="form-side" aria-label="Údaje o akci">
+      <form class="form" id="form" autocomplete="off" onsubmit="return false">
+        <label for="f-nazev">Název</label>
+        <input id="f-nazev" data-target="nazev" type="text">
+
+        <label for="f-sraz">Sraz</label>
+        <input id="f-sraz" data-target="sraz" type="text">
+
+        <label for="f-navrat">Návrat</label>
+        <input id="f-navrat" data-target="navrat" type="text">
+
+        <label for="f-prihl">Přihlašování</label>
+        <input id="f-prihl" data-target="prihl" type="text">
+
+        <label for="f-kapacita">Kapacita</label>
+        <input id="f-kapacita" data-target="kapacita" type="text">
+
+        <label for="f-cena">Cena</label>
+        <input id="f-cena" data-target="cena" type="text">
+
+        <label for="f-ssebou">S Sebou</label>
+        <input id="f-ssebou" data-target="ssebou" type="text">
+
+        <label for="f-vedouci">Vedoucí</label>
+        <input id="f-vedouci" data-target="vedouci" type="text">
+
+        <label for="f-kontakt">Kontakt</label>
+        <input id="f-kontakt" data-target="tel" type="text">
+      </form>
+    </section>
+
+    <section class="poster-side" aria-label="Náhled plakátu">
+      <article class="poster" id="poster">
+        <h1 id="nazev"></h1>
+
+        <div class="poster-info">
+          <p class="sraz"     id="sraz"></p>
+          <p class="navrat"   id="navrat"></p>
+          <p class="prihl"    id="prihl"></p>
+          <p class="kapacita" id="kapacita"></p>
+          <p class="cena"     id="cena"></p>
+          <p class="ssebou"   id="ssebou"></p>
+          <p class="vedouci"  id="vedouci"></p>
+          <p class="tel"      id="tel"></p>
+        </div>
+      </article>
+
+      <button class="download" id="download" type="button">Stáhnout</button>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+    // Live preview: typing in a field replaces the matching text on the poster;
+    // clearing the field restores the original text from the design.
+    (function () {
+      var title = document.getElementById('nazev');
+      var MAX_EM = 6;      // 96px
+      var MIN_EM = 0.5;    // 8px – spodní hranice, aby se text nikdy nezmenšil na nulu
+
+      // Nastaví největší velikost písma (max. 6em), při které se nadpis vejde
+      // do svého boxu (424 × 192 px) – bez přetečení do výšky i do šířky.
+      function fitTitle() {
+        var lo = MIN_EM, hi = MAX_EM;
+
+        function fits(em) {
+          title.style.fontSize = em + 'em';
+          return title.scrollHeight <= title.clientHeight &&
+                 title.scrollWidth <= title.clientWidth;
+        }
+
+        if (fits(MAX_EM)) return;
+
+        for (var i = 0; i < 14; i++) {
+          var mid = (lo + hi) / 2;
+          if (fits(mid)) lo = mid; else hi = mid;
+        }
+        title.style.fontSize = lo + 'em';
+      }
+
+      var inputs = document.querySelectorAll('#form input[data-target]');
+
+      inputs.forEach(function (input) {
+        var target = document.getElementById(input.dataset.target);
+        var original = target.textContent;
+
+        input.addEventListener('input', function () {
+          var value = input.value.trim();
+          target.textContent = value === '' ? original : value;
+          if (target === title) fitTitle();
+        });
+      });
+
+      fitTitle();
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(fitTitle);   // přepočet po načtení písma Inter
+      }
+
+      // Stáhnout: vykreslí #poster do canvasu a stáhne ho jako PNG (2× pro ostrost).
+      var downloadBtn = document.getElementById('download');
+      var poster = document.getElementById('poster');
+
+      downloadBtn.addEventListener('click', function () {
+        if (typeof html2canvas !== 'function') {
+          alert('Knihovna html2canvas se nenačetla (zkontrolujte připojení k internetu).');
+          return;
+        }
+
+        downloadBtn.disabled = true;
+
+        var fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+
+        fontsReady
+          .then(function () {
+            return html2canvas(poster, {
+              scale: 2,
+              backgroundColor: null,
+              useCORS: true,
+              onclone: function (clonedDoc) {
+                // vlastní transform plakátu (vertikální vystředění) by posunul obsah v obrázku
+                clonedDoc.getElementById('poster').style.transform = 'none';
+              }
+            });
+          })
+          .then(function (canvas) {
+            canvas.toBlob(function (blob) {
+              if (!blob) { alert('Obrázek se nepodařilo vytvořit.'); return; }
+              var url = URL.createObjectURL(blob);
+              var a = document.createElement('a');
+              a.href = url;
+              a.download = 'plakat.png';
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+            }, 'image/png');
+          })
+          .catch(function () {
+            alert('Obrázek se nepodařilo vytvořit.');
+          })
+          .then(function () {
+            downloadBtn.disabled = false;
+          });
+      });
+    })();
+  </script>
+</body>
+</html>
